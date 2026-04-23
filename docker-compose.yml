@@ -1,0 +1,27 @@
+# Bu dizinde `docker compose up -d` — yalnızca LAN agent. Broker harici (ör. EC2 RabbitMQ).
+# amqps + özel CA: varsayılan olarak bu dizindeki ca_certificate.pem container’a /etc/ssl/rabbitmq/ca.pem olarak bağlanır.
+# Başka yol için: RABBITMQ_CA_HOST_FILE=/mutlak/yol/ca.pem
+
+services:
+  hikvision-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Go API ile aynı organization UUID string (kuyruk adı buna göre)
+      HIKVISION_GATEWAY_ORG_ID: ${HIKVISION_GATEWAY_ORG_ID}
+      HIKVISION_GATEWAY_AMQP_URL: ${HIKVISION_GATEWAY_AMQP_URL:-amqps://ec2-16-16-155-120.eu-north-1.compute.amazonaws.com:5671}
+      HIKVISION_GATEWAY_AMQP_SSL_CAFILE: ${HIKVISION_GATEWAY_AMQP_SSL_CAFILE:-/etc/ssl/rabbitmq/ca.pem}
+      HIKVISION_GATEWAY_AMQP_SSL_VERIFY: ${HIKVISION_GATEWAY_AMQP_SSL_VERIFY:-true}
+      HIKVISION_GATEWAY_AMQP_SSL_RELAX_X509: ${HIKVISION_GATEWAY_AMQP_SSL_RELAX_X509:-true}
+      HIKVISION_DEVICE_USERNAME: ${HIKVISION_DEVICE_USERNAME:-admin}
+      HIKVISION_DEVICE_PASSWORD: ${HIKVISION_DEVICE_PASSWORD:-}
+      HIKVISION_ISAPI_INSECURE_SKIP_VERIFY: ${HIKVISION_ISAPI_INSECURE_SKIP_VERIFY:-false}
+      HIK_SADP_STARTUP_TIMEOUT: ${HIK_SADP_STARTUP_TIMEOUT:-3}
+      DEBUG: ${DEBUG:-false}
+    volumes:
+      - ${RABBITMQ_CA_HOST_FILE:-./ca_certificate.pem}:/etc/ssl/rabbitmq/ca.pem:ro
